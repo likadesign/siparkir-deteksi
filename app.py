@@ -9,7 +9,6 @@ st.set_page_config(page_title="SiParkir Deteksi", page_icon="📹")
 AREA_ID = "uji-1"
 REFRESH = 5  # detik
 WIB = timezone(timedelta(hours=7))
-DOMAIN_UM = ("um.ac.id", "students.um.ac.id")  # cek apakah domain ini sudah benar
 
 
 @st.cache_resource
@@ -38,25 +37,6 @@ def baca():
     except Exception:
         st.error("Gagal membaca database. Cek Secrets dan tabel di Supabase.")
         return None, None
-
-
-def email_um(email):
-    email = email.strip().lower()
-    return email.count("@") == 1 and email.split("@")[-1] in DOMAIN_UM
-
-
-def halaman_masuk():
-    st.subheader("Masuk dengan email UM")
-    st.caption("Gunakan email UM kamu (@um.ac.id atau @students.um.ac.id).")
-    with st.form("masuk"):
-        email = st.text_input("Email UM")
-        kirim = st.form_submit_button("Masuk")
-    if kirim:
-        if email_um(email):
-            st.session_state["email"] = email.strip().lower()
-            st.rerun()
-        else:
-            st.error("Hanya email UM yang bisa masuk.")
 
 
 @st.fragment(run_every=REFRESH)
@@ -105,16 +85,7 @@ def peta():
 
 
 st.title("📹 SiParkir Deteksi")
-
-if not st.session_state.get("email"):
-    st.caption("Prototipe uji coba: slot kosong dihitung otomatis dari video oleh program deteksi motor.")
-    halaman_masuk()
-    st.stop()
-
-st.caption(f"Masuk sebagai {st.session_state['email']}")
-if st.button("Keluar"):
-    st.session_state["email"] = None
-    st.rerun()
+st.caption("Prototipe uji coba terpisah: slot kosong dihitung otomatis dari video oleh program deteksi motor.")
 
 tab1, tab2 = st.tabs(["Beranda", "Peta"])
 with tab1:

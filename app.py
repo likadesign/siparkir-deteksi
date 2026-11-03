@@ -342,7 +342,7 @@ def halaman_beranda():
     with kanan:
         foto = gambar("gedung_um")
         isi = f"<img src='{foto}'>" if foto else "<div class='hero-ph'>Taruh foto gedung UM di gambar/gedung_um.jpg</div>"
-        tampil_html(f"<div class='sp hero-img'>{isi}<div class='salam'>Salam Cakrawala</div></div>")
+        tampil_html(f"<div class='sp hero-img'>{isi}</div>")
 
     stat_cards()
 
@@ -363,8 +363,53 @@ def halaman_area():
     peta()
     st.markdown("&nbsp;")
     daftar_terdekat()
-    with st.expander("Riwayat deteksi terbaru"):
-        riwayat()
+
+
+def halaman_riwayat():
+    tampil_html("<div class='sp judul-hal'>Riwayat Deteksi</div>")
+    tampil_html("<div class='sp panel'><div class='panel-head'>🕒 Kejadian motor masuk dan keluar"
+                "<span class='live'><span class='dot'>●</span> Live Update</span></div></div>")
+    st.caption("Setiap motor yang melewati garis hitung kamera tercatat otomatis beserta waktunya, tanpa input petugas.")
+    riwayat()
+
+
+def halaman_panduan():
+    tampil_html("<div class='sp judul-hal'>Panduan Penggunaan</div>")
+    langkah = [
+        ("Aktifkan lokasi", "Tekan tombol lokasi di bagian atas halaman, lalu pilih Izinkan saat browser meminta akses. Tanpa lokasi, jarak dan rekomendasi tidak tampil."),
+        ("Lihat slot di Beranda", "Beranda menampilkan jumlah slot tersedia dan daftar area parkir beserta statusnya. Data diperbarui otomatis."),
+        ("Cek peta dan rekomendasi", "Buka Area Parkir untuk melihat peta, marker berwarna sesuai status, dan tiga rekomendasi parkir terdekat."),
+        ("Pahami status warna", "Hijau: Tersedia. Biru: Terisi Sebagian. Oranye: Hampir Penuh. Merah: Penuh. Abu-abu: Tutup hari ini."),
+        ("Perhatikan peringatan tutup", "Jika ada parkiran yang tutup pada hari tertentu (misalnya Jumat), peringatan muncul beserta area yang masih buka."),
+        ("Lihat riwayat deteksi", "Buka menu Riwayat untuk melihat motor masuk dan keluar yang terhitung kamera, lengkap dengan waktunya."),
+    ]
+    for i, (jud, isi) in enumerate(langkah, 1):
+        tampil_html(f"<div class='sp langkah'><div class='no'>{i}</div>"
+                    f"<div><div class='jud'>{jud}</div><div class='isi'>{isi}</div></div></div>")
+
+
+st.markdown(CSS, unsafe_allow_html=True)
+st.session_state.setdefault("menu", "Beranda")
+header()
+
+kol_gps, kol_info = st.columns([1, 5])
+with kol_gps:
+    lok = streamlit_geolocation()
+if lok and lok.get("latitude") is not None and lok.get("longitude") is not None:
+    st.session_state["pos"] = (lok["latitude"], lok["longitude"])
+with kol_info:
+    st.caption("✅ Lokasi aktif" if st.session_state.get("pos")
+               else "📍 Tekan tombol di samping, lalu izinkan akses lokasi di browser.")
+
+halaman = st.session_state.get("menu") or "Beranda"
+if halaman == "Beranda":
+    halaman_beranda()
+elif halaman == "Area Parkir":
+    halaman_area()
+elif halaman == "Riwayat":
+    halaman_riwayat()
+else:
+    halaman_panduan()
 
 
 def halaman_panduan():

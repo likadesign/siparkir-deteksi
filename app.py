@@ -1,6 +1,5 @@
 import base64
 import math
-import re
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
@@ -23,7 +22,7 @@ KODE = {"parkir-k": "K", "fmipa-pipa": "F1", "fmipa-gracak": "F2", "gkb-a20": "A
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Dancing+Script:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 .sp, .sp *, .stButton button {font-family: 'Poppins', sans-serif;}
 .stApp {background: linear-gradient(180deg, #eaf2ff 0%, #f8fbff 45%, #ffffff 100%);}
 .block-container {max-width: 1180px; padding-top: 1.2rem; padding-bottom: 3rem;}
@@ -52,8 +51,6 @@ button[data-testid="stBaseButton-pillsActive"] {background: #0b2a6f !important; 
   mask-image: linear-gradient(to right, transparent 0%, #000 28%);}
 .hero-ph {display: flex; align-items: center; justify-content: center; height: 100%; color: #1e40af;
   font-weight: 600; text-align: center; padding: 20px;}
-.salam {position: absolute; top: 14px; right: 24px; font-family: 'Dancing Script', cursive !important;
-  font-size: 2rem; color: #1d4ed8; transform: rotate(-6deg);}
 
 .st-key-cta button {background: #0b2a6f; color: #ffffff; border: none; border-radius: 999px;
   padding: 0.6rem 1.6rem; font-weight: 600;}
@@ -79,8 +76,6 @@ button[data-testid="stBaseButton-pillsActive"] {background: #0b2a6f !important; 
 .panel-head .dot {color: #4ade80;}
 .row {display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid #e8eef7;}
 .row:last-child {border-bottom: none;}
-.thumb {width: 86px; height: 56px; border-radius: 10px; object-fit: cover; background: #dbeafe;
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;}
 .kode {min-width: 44px; height: 44px; border-radius: 12px; background: #dbeafe; color: #1d4ed8;
   font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
 .info {flex: 1; min-width: 0;}
@@ -111,7 +106,6 @@ button[data-testid="stBaseButton-pillsActive"] {background: #0b2a6f !important; 
 @media (max-width: 768px) {
   .stats {grid-template-columns: 1fr;}
   .hero-text h1 {font-size: 2rem;}
-  .thumb {display: none;}
   .motto {text-align: left;}
 }
 </style>
@@ -215,14 +209,15 @@ def header():
     um = gambar("logo_um")
     logo_um = f"<img src='{um}'>" if um else "<div class='logo-ph'>UM</div>"
     logo_sp = "<div class='logo-ph'>🚗</div>"
-    kiri, tengah, kanan = st.columns([1.5, 1.6, 1.1])
+    kiri, tengah, kanan = st.columns([1.5, 1.8, 1.1])
     with kiri:
         tampil_html(f"""
         <div class='sp brand'>{logo_um}<div class='brand-sep'></div>{logo_sp}
         <span class='brand-name'>SiParkir</span></div>
         """)
     with tengah:
-        st.pills("Menu", ["Beranda", "Area Parkir", "Panduan"], key="menu", label_visibility="collapsed")
+        st.pills("Menu", ["Beranda", "Area Parkir", "Riwayat", "Panduan"], key="menu",
+                 label_visibility="collapsed")
     with kanan:
         tampil_html("<div class='sp motto'>Memayu Hayuning Bawana</div>")
 
@@ -319,7 +314,6 @@ def riwayat():
     _, log = baca()
     if log is None:
         return
-    st.caption("Dari area yang dihitung otomatis dari kamera.")
     if not log:
         st.info("Belum ada kendaraan terdeteksi.")
     else:
@@ -408,42 +402,5 @@ elif halaman == "Area Parkir":
     halaman_area()
 elif halaman == "Riwayat":
     halaman_riwayat()
-else:
-    halaman_panduan()
-
-
-def halaman_panduan():
-    tampil_html("<div class='sp judul-hal'>Panduan Penggunaan</div>")
-    langkah = [
-        ("Aktifkan lokasi", "Tekan tombol lokasi di bagian atas halaman, lalu pilih Izinkan saat browser meminta akses. Tanpa lokasi, jarak dan rekomendasi tidak tampil."),
-        ("Lihat slot di Beranda", "Beranda menampilkan jumlah slot tersedia dan daftar area parkir beserta statusnya. Data diperbarui otomatis."),
-        ("Cek peta dan rekomendasi", "Buka Area Parkir untuk melihat peta, marker berwarna sesuai status, dan tiga rekomendasi parkir terdekat."),
-        ("Pahami status warna", "Hijau: Tersedia. Biru: Terisi Sebagian. Oranye: Hampir Penuh. Merah: Penuh. Abu-abu: Tutup hari ini."),
-        ("Perhatikan peringatan tutup", "Jika ada parkiran yang tutup pada hari tertentu (misalnya Jumat), peringatan muncul beserta area yang masih buka."),
-        ("Lihat riwayat deteksi", "Di halaman Area Parkir, buka Riwayat deteksi terbaru untuk melihat motor masuk dan keluar yang terhitung kamera."),
-    ]
-    for i, (jud, isi) in enumerate(langkah, 1):
-        tampil_html(f"<div class='sp langkah'><div class='no'>{i}</div>"
-                    f"<div><div class='jud'>{jud}</div><div class='isi'>{isi}</div></div></div>")
-
-
-st.markdown(CSS, unsafe_allow_html=True)
-st.session_state.setdefault("menu", "Beranda")
-header()
-
-kol_gps, kol_info = st.columns([1, 5])
-with kol_gps:
-    lok = streamlit_geolocation()
-if lok and lok.get("latitude") is not None and lok.get("longitude") is not None:
-    st.session_state["pos"] = (lok["latitude"], lok["longitude"])
-with kol_info:
-    st.caption("✅ Lokasi aktif" if st.session_state.get("pos")
-               else "📍 Tekan tombol di samping, lalu izinkan akses lokasi di browser.")
-
-halaman = st.session_state.get("menu") or "Beranda"
-if halaman == "Beranda":
-    halaman_beranda()
-elif halaman == "Area Parkir":
-    halaman_area()
 else:
     halaman_panduan()
